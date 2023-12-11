@@ -1,0 +1,26 @@
+#!/usr/bin/bash
+
+# Checking that LZ_SCRIPTS_FOLDER is set
+if [ -z "$LZ_SCRIPTS_FOLDER" ]; then
+    echo "LZ_SCRIPTS_FOLDER is not set. Please set it."
+    return 1
+fi
+
+# Checking that LZ_SCRIPTS_FOLDER is a valid folder
+if [ ! -d "$LZ_SCRIPTS_FOLDER" ]; then
+    echo "LZ_SCRIPTS_FOLDER is not a valid folder. Please set it to the folder where the lazy scripts are located."
+    return 1
+fi
+
+# declare function list
+lz_function_list=()
+
+# loop over files in LZ_SCRIPTS_FOLDER which have .lz.sh in the end of their name
+for file in "$LZ_SCRIPTS_FOLDER"/*.lz.sh; do
+    source "$file"
+done
+
+
+#TODO use argument to call function
+#TODO list functions when no argument
+#TODO check duplicate function names
