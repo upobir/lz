@@ -1,0 +1,63 @@
+#!/usr/bin/bash
+
+# Checking that LZ_SCRIPTS_FOLDER is set
+if [ -z "$LZ_SCRIPTS_FOLDER" ]; then
+    echo "LZ_SCRIPTS_FOLDER is not set. Please set it."
+    return 1
+fi
+
+# Checking that LZ_SCRIPTS_FOLDER is a valid folder
+if [ ! -d "$LZ_SCRIPTS_FOLDER" ]; then
+    echo "LZ_SCRIPTS_FOLDER is not a valid folder. Please set it to the folder where the lazy scripts are located."
+    return 1
+fi
+
+# declare function list
+lz_function_list=()
+
+# loop over files in LZ_SCRIPTS_FOLDER which have .lz.sh in the end of their name and source them
+for file in "$LZ_SCRIPTS_FOLDER"/*.lz.sh; do
+    source "$file"
+done
+
+# associative array for argument to function
+unset lz_function_map
+declare -A lz_function_map
+
+# create map from the list
+for function_name in ${lz_function_list[@]}; do
+    # argument name is function name with _ converted to -
+    argument_name="${function_name//_/-}"
+
+    # check for duplicates
+    if [[ -n ${lz_function_map[$argument_name]} ]]; then
+        echo "Duplicate function: $function_name"
+        return 1
+    fi
+
+    # add to map
+    lz_function_map["$argument_name"]="$function_name"
+done
+
+# if no argument print candidates
+if [ $# -ne 1 ]; then
+    echo "Available scripts:"
+    for argument_name in "${!lz_function_map[@]}"; do
+        echo "    " "$argument_name"
+    done    
+    return 0
+fi
+
+# if argument is not in map, error
+lz_argument="$1"
+if [ -z ${lz_function_map[$lz_argument]} ]; then
+    echo "Invalid argument: $lz_argument"
+    return 1
+fi
+
+# call the script
+${lz_function_map[$lz_argument]}
+
+
+# TODO use comments in lz files to get function list
+# TODO refactor code
