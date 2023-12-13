@@ -1,13 +1,6 @@
 #!/usr/bin/bash
 
-
-lz_initialize() {
-    unset lz_function_map
-
-    lz_function_list=()
-    declare -gA lz_function_map
-
-    LZ_MARKER="## lz function"
+lz_check_scripts_folder() {
     if [ -z "$LZ_SCRIPTS_FOLDER" ]; then
         echo "LZ_SCRIPTS_FOLDER is not set. Please set it."
         return 1
@@ -21,47 +14,83 @@ lz_initialize() {
     return 0
 }
 
+
+lz_initialize() {
+    unset lz_function_map
+
+    lz_function_list=()
+    declare -gA lz_function_map
+
+    LZ_MARKER="## lz function"
+
+    lz_check_scripts_folder
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    return 0
+}
+
+lz_parse_single_file() {
+    while IFS= read -r line; do
+        function_name=${line%%(*}
+        lz_function_list+=("$function_name")
+    done < <(grep -A1 --no-group-separator "$LZ_MARKER" "$1" | grep -v "$LZ_MARKER")
+}
+
 lz_collect_functions() {
-    # loop over files in LZ_SCRIPTS_FOLDER which have .lz.sh in the end of their name and source them
-    for file in "$LZ_SCRIPTS_FOLDER"/*.lz.sh; do
+    lz_script_files=("$LZ_SCRIPTS_FOLDER"/*.lz.sh)
+
+    if [ ${#lz_script_files[@]} -eq 0 ] || [ ! -e "${lz_script_files[0]}" ]; then
+        echo "No script files found."
+        echo
+        return 0
+    fi
+
+    for file in "${lz_script_files[@]}"; do
         source "$file"
 
-        # get function list by grepping the comments
-        while IFS= read -r line; do
-            function_name=${line%%(*}
-            lz_function_list+=("$function_name")
-        done < <(grep -A1 "$LZ_MARKER" "$file" | grep -v "$LZ_MARKER")
+        lz_parse_single_file "$file"
     done
+}
 
-    # create map from the list
+lz_build_function_map() {
     for function_name in ${lz_function_list[@]}; do
-        # argument name is function name with _ converted to -
         argument_name="${function_name//_/-}"
 
-        # check for duplicates
         if [[ -n ${lz_function_map[$argument_name]} ]]; then
             echo "Duplicate function: $function_name"
             return 1
         fi
 
-        # add to map
         lz_function_map[$argument_name]=$function_name
     done
+}
+
+lz_collect_and_build() {
+    lz_collect_functions
+
+    lz_build_function_map
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
 
     return 0
 }
 
+lz_print_available_scripts() {
+    echo "Available scripts:"
+    for argument_name in "${!lz_function_map[@]}"; do
+        echo "    " "$argument_name"
+    done    
+}
+
 lz_execute() {
-    # if no argument print candidates
     if [ $# -ne 1 ]; then
-        echo "Available scripts:"
-        for argument_name in "${!lz_function_map[@]}"; do
-            echo "    " "$argument_name"
-        done    
+        lz_print_available_scripts
         return 0
     fi
 
-    # if argument is not in map, error
     lz_argument="$1"
     if [ -z ${lz_function_map[$lz_argument]} ]; then
         echo "Invalid argument: $lz_argument"
@@ -75,15 +104,12 @@ lz_execute() {
 
 lz_initialize
 if [ $? -ne 0 ]; then
-    return $?
+    return 1
 fi
 
-lz_collect_functions
+lz_collect_and_build
 if [ $? -ne 0 ]; then
-    return $?
+    return 1
 fi
 
 lz_execute $@
-
-
-# TODO refactor code
