@@ -21,7 +21,7 @@ lz_initialize() {
     lz_function_list=()
     declare -gA lz_function_map
 
-    LZ_MARKER="## lz function"
+    LZ_MARKER="^## lz function"
 
     lz_check_scripts_folder
     if [ $? -ne 0 ]; then
@@ -79,8 +79,10 @@ lz_collect_and_build() {
 }
 
 lz_print_available_scripts() {
+    lz_sorted_script_names=( $(printf "%s\n" "${!lz_function_map[@]}" | sort) )
+
     echo "Available scripts:"
-    for argument_name in "${!lz_function_map[@]}"; do
+    for argument_name in "${lz_sorted_script_names[@]}"; do
         echo "    " "$argument_name"
     done    
 }
@@ -94,6 +96,8 @@ lz_execute() {
     lz_argument="$1"
     if [ -z ${lz_function_map[$lz_argument]} ]; then
         echo "Invalid argument: $lz_argument"
+        echo
+        lz_print_available_scripts
         return 1
     fi
 
