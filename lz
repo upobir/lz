@@ -21,7 +21,7 @@ lz_initialize() {
     lz_function_list=()
     declare -gA lz_function_map
 
-    LZ_MARKER="## lz function"
+    LZ_MARKER="^## lz function"
 
     lz_check_scripts_folder
     if [ $? -ne 0 ]; then
