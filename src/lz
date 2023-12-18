@@ -87,9 +87,18 @@ lz_print_available_scripts() {
     done    
 }
 
+lz_print_scripts_raw() {
+    echo ${!lz_function_map[@]}
+}
+
 lz_execute() {
     if [ $# -ne 1 ]; then
         lz_print_available_scripts
+        return 0
+    fi
+
+    if [ $# -eq 1 ] && [ "$1" == "-l" ]; then
+        lz_print_scripts_raw
         return 0
     fi
 

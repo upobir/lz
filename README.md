@@ -13,3 +13,11 @@ Cause I'm Lazy. A script that you put in your path and you get a bunch of aliase
 ### Steps to use
 1. Run `. lz` to see available scripts
 2. Run `. lz <script name>` to run the script
+
+
+### Tab Completion
+Since the script is meant to be used after `source` or `.`, the only way to get tab completion is to add tab completion is for the `source` command. To do this, you can source the file `lz_source_completion.sh` in `src` folder. Note some things
+1. It is assumed that you source this file after adding the `lz` script to your path.
+2. It is assumed that you have not modified tab completion for `source` or `.` for something else. If you have, then check the comment in that file.
+
+I in particular put the completion script in the lz scripts folder and then source it in my `.bashrc` file.
